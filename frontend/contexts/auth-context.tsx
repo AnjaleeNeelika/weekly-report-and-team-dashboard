@@ -1,6 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { authApi } from "@/data/auth/data";
 
 export interface AuthUser {
   id?: string | number;
@@ -20,49 +22,40 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>({
-    email: "admin@teamsync.com",
-    firstName: "Admin",
-    lastName: "User",
-    role: "admin",
-  });
-  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const savedUser = localStorage.getItem("auth_user");
-      if (savedUser) {
-        setUser(JSON.parse(savedUser));
-      }
-    } catch (e) {
-      console.error("Failed to load auth user from storage", e);
-    }
+    authApi.me()
+      .then((currentUser) => {
+        setUser({
+          id: currentUser.user_id,
+          email: currentUser.email,
+          firstName: currentUser.first_name,
+          lastName: currentUser.last_name,
+          role: currentUser.role,
+        });
+      })
+      .catch(() => setUser(null))
+      .finally(() => setIsLoading(false));
   }, []);
 
   const signOut = async () => {
     setIsLoading(true);
     try {
-      localStorage.removeItem("auth_user");
-      localStorage.removeItem("access_token");
+      await authApi.logout();
     } catch (e) {
-      console.error("Error clearing storage on logout", e);
+      console.error("Error completing logout", e);
     } finally {
       setUser(null);
       setIsLoading(false);
+      router.replace("/auth/signin");
     }
   };
 
   const handleSetUser = (newUser: AuthUser | null) => {
     setUser(newUser);
-    if (newUser) {
-      try {
-        localStorage.setItem("auth_user", JSON.stringify(newUser));
-      } catch (e) {
-        console.error("Error saving user to storage", e);
-      }
-    } else {
-      localStorage.removeItem("auth_user");
-    }
   };
 
   return (
@@ -76,12 +69,7 @@ export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
     return {
-      user: {
-        email: "admin@teamsync.com",
-        firstName: "Admin",
-        lastName: "User",
-        role: "admin",
-      },
+      user: null,
       isLoading: false,
       signOut: async () => {},
       setUser: () => {},

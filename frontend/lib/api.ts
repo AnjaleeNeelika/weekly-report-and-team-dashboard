@@ -53,6 +53,7 @@ export async function fetchApi<T = any>(
 
   const config: RequestInit = {
     ...customConfig,
+    credentials: "include",
     headers: {
       ...defaultHeaders,
       ...headers,

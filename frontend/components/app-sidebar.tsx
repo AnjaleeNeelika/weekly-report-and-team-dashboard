@@ -2,27 +2,18 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
     LayoutDashboard,
-    Truck,
     Settings,
     LogOut,
     Sliders,
     ChevronDown,
     ChevronRight,
-    Map,
-    Building2,
-    Weight,
-    ArrowLeftRight,
     type LucideIcon,
-    ScrollText,
-    FileDown,
     Users,
-    CircleCheckBig,
-    Upload,
     BarChart3,
-    PackageOpen,
+    FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
@@ -48,7 +39,11 @@ const menuItems: MenuItem[] = [
         url: "/dashboard",
         icon: LayoutDashboard,
     },
-
+    {
+        title: "Personal Weekly Reports",
+        url: "/personal-weekly-reports",
+        icon: FileText,
+    }
 ];
 
 const settingsMenuItems: MenuItem[] = [
@@ -62,16 +57,16 @@ const settingsMenuItems: MenuItem[] = [
                 url: "/settings/admin-panel/user-management",
                 icon: Users,
             }
-        ]
+        ],
     },
     {
         title: "Settings",
-        url: "/settings/general_settings",
+        url: "/settings/general-settings",
         icon: Settings,
     },
 ]
 
-function getInitials(firstName: string | null, lastName: string | null, email: string): string {
+function getInitials(firstName: string | null | undefined, lastName: string | null | undefined, email: string): string {
     if (firstName && lastName) {
         return `${firstName[0]}${lastName[0]}`.toUpperCase();
     }
@@ -82,11 +77,12 @@ function getInitials(firstName: string | null, lastName: string | null, email: s
 function UserMenu() {
     const { user, signOut, isLoading } = useAuth();
     const [open, setOpen] = useState(false);
-    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
     const { state } = useSidebar();
     const isCollapsed = state === "collapsed";
+
+    const router = useRouter();
 
     // Close on outside click
     useEffect(() => {
@@ -98,6 +94,15 @@ function UserMenu() {
         document.addEventListener("mousedown", handleClick);
         return () => document.removeEventListener("mousedown", handleClick);
     }, []);
+
+    if (isLoading) {
+        return (
+            <div className="flex h-9 w-full items-center gap-2 px-0 py-1" aria-label="Loading user profile">
+                <span className="h-8 w-8 shrink-0 animate-pulse rounded-md bg-sidebar-accent" />
+                {!isCollapsed && <span className="h-4 w-24 animate-pulse rounded bg-sidebar-accent" />}
+            </div>
+        );
+    }
 
     if (!user) return null;
 
@@ -137,12 +142,14 @@ function UserMenu() {
                             </div>
                         }
                     </div>
-                    <ChevronRight
-                        className={cn(
-                            "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200",
-                            open && "rotate-180"
-                        )}
-                    />
+                    {!isCollapsed &&
+                        <ChevronRight
+                            className={cn(
+                                "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200",
+                                open && "rotate-180"
+                            )}
+                        />
+                    }
                 </Button>
 
                 {open && (
@@ -177,6 +184,7 @@ function UserMenu() {
                             onClick={() => {
                                 setOpen(false);
                                 signOut();
+                                router.push("/auth/signin");
                             }}
                             disabled={isLoading}
                             className={cn(
@@ -196,6 +204,7 @@ function UserMenu() {
 }
 
 export default function AppSidebar() {
+    const { user, isLoading: isAuthLoading } = useAuth();
     const { state } = useSidebar();
     const isCollapsed = state === "collapsed";
     const pathname = usePathname();
@@ -211,6 +220,11 @@ export default function AppSidebar() {
             [title]: !prev[title],
         }));
     };
+
+    const canAccessAdminPanel = !isAuthLoading && (user?.role === "admin" || user?.role === "manager");
+    const visibleSettingsMenuItems = settingsMenuItems.filter(
+        (item) => item.title !== "Admin Panel" || canAccessAdminPanel
+    );
 
     return (
         <Sidebar collapsible="icon" className="border-r border-border bg-sidebar text-sidebar-foreground">
@@ -252,6 +266,7 @@ export default function AppSidebar() {
                                                     return (
                                                         <SidebarMenuItem key={subItem.title}>
                                                             <SidebarMenuButton
+                                                                asChild
                                                                 isActive={isSubActive}
                                                                 tooltip={`${item.title}: ${subItem.title}`}
                                                                 className={cn(
@@ -306,6 +321,7 @@ export default function AppSidebar() {
                                                         return (
                                                             <SidebarMenuSubItem key={subItem.title}>
                                                                 <SidebarMenuSubButton
+                                                                    asChild
                                                                     isActive={isSubActive}
                                                                     className={cn(
                                                                         "w-full transition-all duration-200",
@@ -337,6 +353,7 @@ export default function AppSidebar() {
                                 return (
                                     <SidebarMenuItem key={item.title}>
                                         <SidebarMenuButton
+                                            asChild
                                             isActive={isActive}
                                             tooltip={item.title}
                                             className={cn(
@@ -360,12 +377,12 @@ export default function AppSidebar() {
 
                 {/* Separator / Management Group */}
                 <SidebarGroup>
-                    <SidebarGroupLabel className={cn(isCollapsed && "sr-only", "text-xs font-semibold text-muted-foreground tracking-wider px-3 mb-2 uppercase")}>
+                    <SidebarGroupLabel className={cn(isCollapsed && "sr-only", "font-semibold text-muted-foreground tracking-wider px-3 mb-2 uppercase")}>
                         Settings
                     </SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            {settingsMenuItems.map((item) => {
+                            {visibleSettingsMenuItems.map((item) => {
                                 // If it's a section with sub-items
                                 if (item.items) {
                                     const hasActiveChild = item.items.some(
@@ -382,6 +399,7 @@ export default function AppSidebar() {
                                                     return (
                                                         <SidebarMenuItem key={subItem.title}>
                                                             <SidebarMenuButton
+                                                                asChild
                                                                 isActive={isSubActive}
                                                                 tooltip={`${item.title}: ${subItem.title}`}
                                                                 className={cn(
@@ -436,6 +454,7 @@ export default function AppSidebar() {
                                                         return (
                                                             <SidebarMenuSubItem key={subItem.title}>
                                                                 <SidebarMenuSubButton
+                                                                    asChild
                                                                     isActive={isSubActive}
                                                                     className={cn(
                                                                         "w-full transition-all duration-200",
@@ -467,6 +486,7 @@ export default function AppSidebar() {
                                 return (
                                     <SidebarMenuItem key={item.title}>
                                         <SidebarMenuButton
+                                            asChild
                                             isActive={isActive}
                                             tooltip={item.title}
                                             className={cn(
@@ -490,7 +510,7 @@ export default function AppSidebar() {
             </SidebarContent>
 
             {/* Footer / User Profile */}
-            <SidebarFooter className="p-4 border-t border-border bg-sidebar mb-20">
+            <SidebarFooter className="py-4 border-t border-border bg-sidebar">
                 <UserMenu />
             </SidebarFooter>
         </Sidebar>

@@ -1,9 +1,8 @@
 import { api } from "@/lib/api";
-import { SignInFormData } from "@/types/auth";
 
 export interface AuthResponseData {
-  access_token: string;
-  token_type: string;
+  access_token?: string;
+  token_type?: string;
   user_id: number;
   email: string;
   first_name: string;
@@ -19,6 +18,8 @@ export const loginUser = async (email: string, password: string): Promise<AuthRe
 
 export const authApi = {
   login: loginUser,
+
+  me: () => api.get<AuthResponseData>("/auth/me"),
 
   register: (userData: {
     email: string;

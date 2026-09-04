@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useAuth } from "@/contexts/auth-context";
 import { useSidebar } from "./ui/sidebar";
 
 /** Routes on which the Navbar is hidden entirely (e.g. full-screen app shells
@@ -15,6 +16,7 @@ const HIDDEN_ON: string[] = [];
 const AUTH_ROUTES = ["/auth"];
 
 export function Navbar() {
+  const { user, isLoading } = useAuth();
   const { state } = useSidebar();
   const isSidebarCollapsed = state === "collapsed";
 
@@ -22,7 +24,7 @@ export function Navbar() {
 
   if (HIDDEN_ON.some((route) => pathname.startsWith(route))) return null;
 
-  const showSignIn = !AUTH_ROUTES.some((route) => pathname.startsWith(route));
+  const showSignIn = !isLoading && !user && !AUTH_ROUTES.some((route) => pathname.startsWith(route));
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/60 backdrop-blur-md">
