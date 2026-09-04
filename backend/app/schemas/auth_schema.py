@@ -23,6 +23,11 @@ class ChangePasswordRequest(BaseModel):
     new_password: str
 
 
+class SetInitialPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+
 # ── Response Schemas ─────────────────────────────────────────────────────────
 
 class AuthResponse(BaseModel):
@@ -35,3 +40,13 @@ class AuthResponse(BaseModel):
     role: str
     has_initial_password_changed: Optional[bool] = False
     message: str
+
+
+class AuthUserResponse(BaseModel):
+    user_id: int
+    email: str
+    first_name: str
+    last_name: str
+    role: str
+    has_initial_password_changed: Optional[bool] = False
+    message: str = ""

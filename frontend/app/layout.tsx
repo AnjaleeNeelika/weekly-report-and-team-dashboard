@@ -6,8 +6,9 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/auth-context";
 import SidebarWrapper from "@/components/sidebar-wrapper";
 import { Toaster } from "sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
-const inter = Inter({subsets:['latin'],variable:'--font-sans'});
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +30,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", inter.variable)}
+      className={cn(
+        "h-full",
+        "antialiased",
+        geistSans.variable,
+        geistMono.variable,
+        "font-sans",
+        inter.variable,
+      )}
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider
@@ -39,7 +47,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           disableTransitionOnChange={false}
         >
           <AuthProvider>
-            <SidebarWrapper>{children}</SidebarWrapper>
+            <TooltipProvider>
+              <SidebarWrapper>{children}</SidebarWrapper>
+            </TooltipProvider>
           </AuthProvider>
           <Toaster position="top-right" richColors />
         </ThemeProvider>
@@ -47,4 +57,3 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     </html>
   );
 }
-

@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { SignInFormErrors, SignInFormData } from "@/types/auth";
 import { loginUser } from "@/data/auth/data";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function SignIn() {
     const [isLogging, setIsLogging] = useState(false);
@@ -20,6 +21,7 @@ export default function SignIn() {
         password: ""
     });
     const router = useRouter();
+    const { setUser } = useAuth();
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -63,22 +65,30 @@ export default function SignIn() {
 
         try {
             const res = await loginUser(formData.email, formData.password);
+            setUser({
+                id: res.user_id,
+                email: res.email,
+                firstName: res.first_name,
+                lastName: res.last_name,
+                role: res.role,
+            });
 
-            if (res.has_initial_password_changed !== true) {
-                router.push("/auth/change-password");
-            } else {
-                router.push("/dashboard");
-            }
-        } catch (error: any) {
+            // if (res.has_initial_password_changed !== true) {
+            //     router.push("/auth/change-password");
+            // } else {
+            //     router.push("/dashboard");
+            // }
+            router.push("/dashboard");
+        } catch (error: unknown) {
             console.error("Error while logging in:", error);
-            toast.error(error.message || "Failed to connect to authentication server.");
+            toast.error(error instanceof Error ? error.message : "Failed to connect to authentication server.");
         } finally {
             setIsLogging(false);
         }
     };
 
     return (
-        <div className="flex flex-1 items-center justify-center p-4 bg-gradient-to-r from-background to-primary/5">
+        <div className="h-full flex flex-1 items-center justify-center p-4 bg-linear-to-br from-background to-primary/5">
             <Card className="w-full max-w-md shadow-xl shadow-primary/5">
                 <CardHeader className="space-y-1 pb-4">
                     <CardTitle className="text-2xl text-center font-bold">Welcome back</CardTitle>

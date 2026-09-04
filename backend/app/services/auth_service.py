@@ -60,6 +60,8 @@ def register_user(supabase: Client, request: RegisterRequest) -> AuthResponse:
             "sub": str(user["id"]),
             "email": user["email"],
             "role": user["role"],
+            "first_name": user.get("first_name") or "",
+            "last_name": user.get("last_name") or "",
         })
 
         return AuthResponse(
@@ -95,6 +97,8 @@ def login_user(supabase: Client, request: LoginRequest) -> AuthResponse:
             "sub": str(user["id"]),
             "email": user["email"],
             "role": user["role"],
+            "first_name": user.get("first_name") or "",
+            "last_name": user.get("last_name") or "",
         })
 
         password_changed = user.get("has_initial_password_changed")
@@ -145,6 +149,25 @@ def change_password(supabase: Client, request: ChangePasswordRequest) -> dict:
         raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+def set_initial_password(supabase: Client, token: str, new_password: str) -> dict:
+    result = (
+        supabase.table("users")
+        .select("id")
+        .eq("signin_token", token)
+        .limit(1)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=400, detail="This password setup link is invalid or has already been used.")
+
+    supabase.table("users").update({
+        "password": hash_password(new_password),
+        "signin_token": None,
+        "has_initial_password_changed": True,
+    }).eq("id", result.data[0]["id"]).execute()
+    return {"message": "Password set successfully. You can now sign in."}
 
 
 def logout_user() -> dict:
