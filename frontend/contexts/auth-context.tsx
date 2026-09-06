@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { authApi } from "@/data/auth/data";
 
 export interface AuthUser {
-  id?: string | number;
+  id?: number;
   email: string;
   firstName?: string;
   lastName?: string;
