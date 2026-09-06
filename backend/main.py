@@ -9,10 +9,19 @@ logger = logging.getLogger("uvicorn.error")
 
 app = FastAPI(title="Weekly Report & Team Dashboard API with Supabase")
 
+origins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "https://weekly-report-and-team-dashboard.vercel.app",
+]
+
+vercel_preview_regex = r"https:\/\/weekly-report-and-team-dashboard.*\.vercel\.app"
+
 # Configure CORS for frontend access
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "https://weekly-report-and-team-dashboard.vercel.app"],
+    allow_origins=origins,
+    allow_origin_regex=vercel_preview_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
