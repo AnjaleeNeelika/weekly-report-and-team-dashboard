@@ -4,12 +4,12 @@ import { ArrowRight, BarChart3, CheckCircle2, Clock } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 bg-gradient-to-r from-primary/5 via-primary/80 to-primary/5 text-foreground w-full min-h-full">
+    <div className="flex flex-col flex-1 text-foreground w-full min-h-full">
       {/* Hero Section */}
-      <main className="flex-1 flex flex-col items-center justify-center text-center px-4 py-18 bg-gradient-to-b from-background to-muted">
+      <main className="flex-1 flex flex-col items-center justify-center text-center px-4 py-18 bg-linear-to-b from-background to-muted">
         <div className="max-w-3xl space-y-8">
           <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-foreground leading-tight">
-            Streamline your team's <span className="text-transparent bg-clip-text bg-gradient-to-r from-chart-4 to-chart-2">weekly reporting.</span>
+            Streamline your team's <span className="text-transparent bg-clip-text bg-linear-to-r from-chart-4 to-chart-2">weekly reporting.</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             A centralized dashboard for teams to submit, review, and track weekly progress. No more scattered emails or messy spreadsheets.

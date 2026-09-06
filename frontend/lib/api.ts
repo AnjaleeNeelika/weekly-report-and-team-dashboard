@@ -17,12 +17,7 @@ export interface RequestOptions extends RequestInit {
 }
 
 /**
- * Common reusable fetch function for communicating with the FastAPI backend.
- * Features:
- * - Base URL resolution
- * - JSON body serialization & Content-Type header management
- * - URL search query parameter formatting
- * - Safe network & response error handling
+ * Fetch function  for FastAPI app
  */
 export async function fetchApi<T = any>(
   endpoint: string,
@@ -70,7 +65,6 @@ export async function fetchApi<T = any>(
   try {
     response = await fetch(url, config);
   } catch (err: any) {
-    // Gracefully capture network errors (backend down, CORS issue, connection refused)
     throw new ApiError(
       "Unable to connect to backend server. Please verify the server is running.",
       0,

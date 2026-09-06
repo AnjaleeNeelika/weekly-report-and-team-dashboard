@@ -14,6 +14,8 @@ import {
     Users,
     BarChart3,
     FileText,
+    FileClock,
+    FilePlus2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
@@ -43,6 +45,18 @@ const menuItems: MenuItem[] = [
         title: "Personal Weekly Reports",
         url: "/personal-weekly-reports",
         icon: FileText,
+        items: [
+            {
+                title: "History",
+                url: "/personal-weekly-reports/history",
+                icon: FileClock,
+            },
+            {
+                title: "New Report",
+                url: "/personal-weekly-reports/new",
+                icon: FilePlus2,
+            }
+        ]
     }
 ];
 

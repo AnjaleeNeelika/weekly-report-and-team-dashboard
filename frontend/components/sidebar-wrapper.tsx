@@ -23,13 +23,13 @@ export default function SidebarWrapper({
                     <AppSidebar />
                     <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
                         <Navbar />
-                        <main className="flex-1 overflow-y-auto">{children}</main>
+                        <main className="flex-1 overflow-y-auto bg-accent/40 dark:bg-background">{children}</main>
                     </div>
                 </div>
             ) : (
                 <div className="flex flex-col flex-1">
                     <Navbar />
-                    <main className="flex-1">{children}</main>
+                    <main className="flex-1 bg-accent/40 dark:bg-background">{children}</main>
                 </div>
             )}
         </SidebarProvider>

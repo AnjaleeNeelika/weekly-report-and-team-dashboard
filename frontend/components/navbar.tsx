@@ -6,7 +6,7 @@ import { BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/contexts/auth-context";
-import { useSidebar } from "./ui/sidebar";
+import { useSidebar, SidebarTrigger } from "./ui/sidebar";
 
 /** Routes on which the Navbar is hidden entirely (e.g. full-screen app shells
  *  that provide their own sidebar/header). */
@@ -29,16 +29,23 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/60 backdrop-blur-md">
       <div className="mx-auto flex h-14 items-center justify-between px-4 sm:px-6">
-        {/* Logo */}
-        {isSidebarCollapsed &&
-          <Link
-            href="/"
-            className="flex items-center gap-2 font-bold text-xl tracking-tight hover:opacity-80 transition-opacity"
-          >
-            <BarChart3 className="h-5 w-5 text-primary" />
-            <span className="text-primary">TeamSync</span>
-          </Link>
-        }
+        <div className="flex items-center gap-3">
+          {/* Mobile sidebar toggle */}
+          <div className="md:hidden">
+            <SidebarTrigger />
+          </div>
+
+          {/* Logo */}
+          {isSidebarCollapsed &&
+            <Link
+              href="/"
+              className="flex items-center gap-2 font-bold text-xl tracking-tight hover:opacity-80 transition-opacity"
+            >
+              <BarChart3 className="h-5 w-5 text-primary" />
+              <span className="text-primary">TeamSync</span>
+            </Link>
+          }
+        </div>
 
         {/* Right-side controls */}
         <nav className="flex items-center gap-2 justify-end w-full">
