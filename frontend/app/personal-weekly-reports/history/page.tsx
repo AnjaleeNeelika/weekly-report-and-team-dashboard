@@ -6,7 +6,6 @@ import { useAuth } from "@/contexts/auth-context";
 import { Report } from "@/types/report";
 import { AlertCircle, Plus, Clock3 } from "lucide-react";
 import { useEffect, useState } from "react";
-import AddNewReportDialog from "../components/add-new-report-dialog";
 import { useRouter } from "next/navigation";
 
 export default function ReportHistory() {
