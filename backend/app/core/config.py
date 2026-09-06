@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     secret_key: str = "cbhjbvv7VGhddHvbhd1348##nv"
     access_token_expire_minutes: int = 60 * 8  # 8 hours
     cookie_secure: bool = False
-    frontend_url: str = "http://localhost:3000"
+    frontend_url: str = "https://weekly-report-and-team-dashboard.vercel.app"
 
     class Config:
         env_file = ".env"
