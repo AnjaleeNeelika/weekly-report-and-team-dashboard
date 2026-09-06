@@ -1,6 +1,6 @@
 from typing import List, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field, model_validator
 
 
 WeeklyReportStatus = Literal["Draft", "Submitted", "Needs Correction", "Approved"]
@@ -62,8 +62,56 @@ class ReportCreate(ReportBase):
 
 
 class ReportUpdate(ReportBase):
+    status: Optional[WeeklyReportStatus] = None
     tasks: Optional[List[ReportTaskCreate]] = None
     time_breakdowns: Optional[List[ReportTimeBreakdownCreate]] = None
+
+
+class ReportReviewRequest(BaseModel):
+    status: Literal["Approved", "Needs Correction"]
+    review_comment: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("review_comment", "comment"),
+    )
+
+    @model_validator(mode="after")
+    def require_comment_for_correction(self):
+        if self.status == "Needs Correction" and (
+            not self.review_comment or not self.review_comment.strip()
+        ):
+            raise ValueError("A review comment is required when requesting changes.")
+        return self
+
+
+class ReportResubmissionRequest(BaseModel):
+    version_number: Optional[int] = None
+    report_data: ReportUpdate
+
+
+class ReportVersion(BaseModel):
+    id: Optional[int] = None
+    report_id: Optional[int] = None
+    version_number: Optional[int] = None
+    submitted_at: Optional[str] = None
+    report_data: Optional[dict] = None
+    created_at: Optional[str] = None
+
+
+class ReportVersionsResponse(BaseModel):
+    success: bool
+    message: Optional[str] = ""
+    data: List[ReportVersion] = Field(default_factory=list)
+    error: Optional[str] = None
+
+
+class ReportReviewComment(BaseModel):
+    id: Optional[int] = None
+    created_at: Optional[str] = None
+    report_id: Optional[int] = None
+    reviewer_id: Optional[int] = None
+    version_number: Optional[int] = None
+    comment: Optional[str] = None
+    action: Optional[str] = None
 
 
 class ReportTask(ReportTaskBase):
@@ -83,6 +131,8 @@ class ReportDetail(ReportBase):
     created_at: Optional[str] = None
     tasks: List[ReportTask] = Field(default_factory=list)
     time_breakdowns: List[ReportTimeBreakdown] = Field(default_factory=list)
+    review_comment: Optional[str] = None
+    review_comments: List[ReportReviewComment] = Field(default_factory=list)
 
 
 class ReportListResponse(BaseModel):

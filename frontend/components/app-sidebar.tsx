@@ -16,6 +16,7 @@ import {
     FileText,
     FileClock,
     FilePlus2,
+    ClipboardCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
@@ -79,6 +80,12 @@ const settingsMenuItems: MenuItem[] = [
         icon: Settings,
     },
 ]
+
+const reviewMenuItem: MenuSubItem = {
+    title: "Review Reports",
+    url: "/reports/review",
+    icon: ClipboardCheck,
+};
 
 function getInitials(firstName: string | null | undefined, lastName: string | null | undefined, email: string): string {
     if (firstName && lastName) {
@@ -239,6 +246,9 @@ export default function AppSidebar() {
     const visibleSettingsMenuItems = settingsMenuItems.filter(
         (item) => item.title !== "Admin Panel" || canAccessAdminPanel
     );
+    const visibleMenuItems = canAccessAdminPanel
+        ? [...menuItems, { title: "Report Review", url: "/reports", icon: ClipboardCheck, items: [reviewMenuItem] }]
+        : menuItems;
 
     return (
         <Sidebar collapsible="icon" className="border-r border-border bg-sidebar text-sidebar-foreground">
@@ -263,7 +273,7 @@ export default function AppSidebar() {
                     </SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            {menuItems.map((item) => {
+                            {visibleMenuItems.map((item) => {
                                 // If it's a section with sub-items
                                 if (item.items) {
                                     const hasActiveChild = item.items.some(

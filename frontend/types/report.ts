@@ -27,6 +27,34 @@ export interface ReportTimeBreakdown {
   hours_spent?: number;
 }
 
+export interface ReportReviewComment {
+  id?: number;
+  report_id?: number;
+  version_number?: number;
+  comment: string;
+  created_at?: string;
+  reviewed_by?: number | User | null;
+}
+
+export interface ReportVersion {
+  id?: number;
+  report_id?: number;
+  version_number?: number;
+  created_at?: string;
+  submitted_at?: string;
+  status?: ReportStatus;
+  project_tag?: string;
+  week_start?: string;
+  week_end?: string;
+  tasks?: ReportTask[];
+  blockers?: string[];
+  achievements?: string[];
+  tasks_planned_next_week?: string;
+  notes_or_links?: string;
+  time_breakdowns?: ReportTimeBreakdown[];
+  review_comment?: string;
+}
+
 export interface Report {
   id?: number;
   created_at?: string;
@@ -45,6 +73,9 @@ export interface Report {
   reviewed_by?: number | User | null;
   user_id?: number;
   version_number?: number;
+  review_comment?: string;
+  review_comments?: ReportReviewComment[];
+  versions?: ReportVersion[];
   tasks?: ReportTask[];
   time_breakdowns?: ReportTimeBreakdown[];
 }
@@ -65,7 +96,12 @@ export interface ReportCreatePayload {
   time_breakdowns?: ReportTimeBreakdown[];
 }
 
-export interface ReportUpdatePayload extends Partial<ReportCreatePayload> {}
+export interface ReportResubmissionPayload {
+  version_number: number;
+  report_data: ReportCreatePayload;
+}
+
+export type ReportUpdatePayload = Partial<ReportCreatePayload>;
 
 export interface ReportListResponse {
   success: boolean;

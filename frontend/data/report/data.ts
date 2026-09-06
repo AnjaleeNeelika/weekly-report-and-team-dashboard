@@ -4,6 +4,7 @@ import {
   ReportCreatePayload,
   ReportListResponse,
   ReportResponse,
+  ReportResubmissionPayload,
   ReportUpdatePayload,
 } from "@/types/report";
 
@@ -27,6 +28,13 @@ export const updateReport = async (reportId: number, payload: ReportUpdatePayloa
   return api.put<ReportResponse>(`/reports/${reportId}`, payload);
 };
 
+export const resubmitReport = async (
+  reportId: number,
+  payload: ReportResubmissionPayload,
+): Promise<ReportResponse> => {
+  return api.post<ReportResponse>(`/reports/${reportId}/resubmit`, payload);
+};
+
 export const submitReport = async (reportId: number): Promise<ReportResponse> => {
   return api.post<ReportResponse>(`/reports/${reportId}/submit`);
 };
@@ -37,6 +45,23 @@ export const deleteReport = async (reportId: number): Promise<ReportResponse> =>
 
 export const getReportById = async (reportId: number): Promise<ReportResponse> => {
   return api.get<ReportResponse>(`/reports/${reportId}`);
+};
+
+export const reviewReport = async (
+  reportId: number,
+  status: "Approved" | "Needs Correction",
+  comment?: string,
+): Promise<ReportResponse> => {
+  return api.patch<ReportResponse>(`/reports/${reportId}/review`, {
+    status,
+    comment,
+  });
+};
+
+export const fetchReportVersions = async (
+  reportId: number,
+): Promise<ReportListResponse> => {
+  return api.get<ReportListResponse>(`/reports/${reportId}/versions`);
 };
 
 export const fetchReportsForCurrentUser = async (userId: number): Promise<Report[]> => {

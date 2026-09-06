@@ -1,4 +1,7 @@
-const API_BASE_URL = process.env.NEXT_API_URL || "https://weekly-report-and-team-dashboard-6b.vercel.app/api/v1";
+const API_BASE_URL =
+  typeof window === "undefined"
+    ? process.env.NEXT_API_URL || "http://localhost:8000/api/v1"
+    : "/api/backend";
 
 export class ApiError extends Error {
   status: number;
