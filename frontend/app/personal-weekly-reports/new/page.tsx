@@ -630,6 +630,7 @@ import {
 } from "@/types/report";
 import { createReport } from "@/data/report/data";
 import { cn } from "cn";
+import { useAuth } from "@/contexts/auth-context";
 
 function computeWeekEnd(weekStart: string) {
   if (!weekStart) return "";
@@ -665,6 +666,7 @@ interface FlaggedNote {
 
 export default function NewReport() {
   const router = useRouter();
+  const { user } = useAuth();
 
   const [weekStart, setWeekStart] = useState("");
   const [weekEnd, setWeekEnd] = useState("");
@@ -708,7 +710,9 @@ export default function NewReport() {
   >({});
 
   const [hoursErrors, setHoursErrors] = useState<
-    Partial<Record<"development" | "testing" | "meetings" | "documentation", string>>
+    Partial<
+      Record<"development" | "testing" | "meetings" | "documentation", string>
+    >
   >({});
 
   // Automatically clear task container error when user enters a valid task name
@@ -741,7 +745,7 @@ export default function NewReport() {
       prev.map((item, i) => ({
         ...item,
         is_key: i === index ? !item.is_key : false,
-      }))
+      })),
     );
   };
 
@@ -755,7 +759,7 @@ export default function NewReport() {
       prev.map((item, i) => ({
         ...item,
         is_key: i === index ? !item.is_key : false,
-      }))
+      })),
     );
   };
 
@@ -841,15 +845,15 @@ export default function NewReport() {
     });
 
     // 3. Validate Hours Breakdown
-    (
-      ["development", "testing", "meetings", "documentation"] as const
-    ).forEach((key) => {
-      const val = hours[key];
-      if (val !== "" && (Number.isNaN(Number(val)) || Number(val) < 0)) {
-        newHoursErrors[key] = "Enter a valid non-negative number.";
-        hasError = true;
-      }
-    });
+    (["development", "testing", "meetings", "documentation"] as const).forEach(
+      (key) => {
+        const val = hours[key];
+        if (val !== "" && (Number.isNaN(Number(val)) || Number(val) < 0)) {
+          newHoursErrors[key] = "Enter a valid non-negative number.";
+          hasError = true;
+        }
+      },
+    );
 
     setFieldErrors(newFieldErrors);
     setTaskErrors(newTaskErrors);
@@ -863,7 +867,7 @@ export default function NewReport() {
   };
 
   const handleSave = async (
-    status: Extract<ReportStatus, "Draft" | "Submitted">
+    status: Extract<ReportStatus, "Draft" | "Submitted">,
   ) => {
     setError("");
 
@@ -871,10 +875,20 @@ export default function NewReport() {
     if (status === "Submitted") {
       const isValid = validateForm();
       if (!isValid) {
-        setError("Please resolve the highlighted field errors before submitting.");
-        toast.error("Form contains errors. Please check the highlighted fields.");
+        setError(
+          "Please resolve the highlighted field errors before submitting.",
+        );
+        toast.error(
+          "Form contains errors. Please check the highlighted fields.",
+        );
         return;
       }
+    }
+
+    if (status === "Draft") {
+      const isValid = validateForm();
+
+      if (!isValid) return;
     }
 
     const timeBreakdowns: ReportTimeBreakdown[] = (
@@ -884,12 +898,15 @@ export default function NewReport() {
         ["Meetings", hours.meetings],
         ["Documentation", hours.documentation],
       ] as [TaskType, string][]
-    ).map(([task_type, value]) => ({
-      task_type,
-      hours_spent: value === "" ? 0 : Number(value),
-    }));
+    )
+      .map(([task_type, value]) => ({
+        task_type,
+        hours_spent: value === "" ? 0 : Number(value),
+      }))
+      .filter(({ hours_spent }) => hours_spent !== 0);
 
     const payload: ReportCreatePayload = {
+      user_id: user?.id,
       week_start: weekStart,
       week_end: weekEnd,
       project_tag: project,
@@ -911,9 +928,9 @@ export default function NewReport() {
         toast.success(
           status === "Draft"
             ? "Report saved as draft."
-            : "Report submitted for review."
+            : "Report submitted for review.",
         );
-        router.push("/personal-weekly-reports");
+        router.push("/personal-weekly-reports/history");
         return;
       }
 
@@ -1003,7 +1020,7 @@ export default function NewReport() {
                   "w-full",
                   fieldErrors.project
                     ? "border-red-500 focus-visible:ring-red-500"
-                    : ""
+                    : "",
                 )}
               />
               {fieldErrors.project && (
@@ -1034,7 +1051,7 @@ export default function NewReport() {
             <div
               className={cn(
                 "border rounded-md overflow-x-auto",
-                fieldErrors.tasks ? "border-red-500 ring-1 ring-red-500" : ""
+                fieldErrors.tasks ? "border-red-500 ring-1 ring-red-500" : "",
               )}
             >
               <Table>
@@ -1063,8 +1080,8 @@ export default function NewReport() {
                             const val = e.target.value;
                             setTasks((prev) =>
                               prev.map((p, idx) =>
-                                idx === i ? { ...p, task_name: val } : p
-                              )
+                                idx === i ? { ...p, task_name: val } : p,
+                              ),
                             );
                             if (taskErrors[i]?.task_name && val.trim()) {
                               setTaskErrors((prev) => ({
@@ -1078,7 +1095,7 @@ export default function NewReport() {
                             "w-52 max-w-full",
                             taskErrors[i]?.task_name
                               ? "border-red-500 focus-visible:ring-red-500"
-                              : ""
+                              : "",
                           )}
                         />
                         {taskErrors[i]?.task_name && (
@@ -1096,8 +1113,8 @@ export default function NewReport() {
                               prev.map((p, idx) =>
                                 idx === i
                                   ? { ...p, priority: val as TaskPriority }
-                                  : p
-                              )
+                                  : p,
+                              ),
                             )
                           }
                         >
@@ -1131,8 +1148,8 @@ export default function NewReport() {
                               prev.map((p, idx) =>
                                 idx === i
                                   ? { ...p, planned_percentage: val }
-                                  : p
-                              )
+                                  : p,
+                              ),
                             );
                             if (taskErrors[i]?.planned_percentage) {
                               setTaskErrors((prev) => ({
@@ -1148,7 +1165,7 @@ export default function NewReport() {
                             "w-20",
                             taskErrors[i]?.planned_percentage
                               ? "border-red-500 focus-visible:ring-red-500"
-                              : ""
+                              : "",
                           )}
                         />
                         {taskErrors[i]?.planned_percentage && (
@@ -1169,8 +1186,10 @@ export default function NewReport() {
                                 : Number(e.target.value);
                             setTasks((prev) =>
                               prev.map((p, idx) =>
-                                idx === i ? { ...p, actual_percentage: val } : p
-                              )
+                                idx === i
+                                  ? { ...p, actual_percentage: val }
+                                  : p,
+                              ),
                             );
                             if (taskErrors[i]?.actual_percentage) {
                               setTaskErrors((prev) => ({
@@ -1186,7 +1205,7 @@ export default function NewReport() {
                             "w-20",
                             taskErrors[i]?.actual_percentage
                               ? "border-red-500 focus-visible:ring-red-500"
-                              : ""
+                              : "",
                           )}
                         />
                         {taskErrors[i]?.actual_percentage && (
@@ -1204,8 +1223,8 @@ export default function NewReport() {
                               prev.map((p, idx) =>
                                 idx === i
                                   ? { ...p, status: val as TaskStatus }
-                                  : p
-                              )
+                                  : p,
+                              ),
                             )
                           }
                         >
@@ -1239,8 +1258,8 @@ export default function NewReport() {
                               prev.map((p, idx) =>
                                 idx === i
                                   ? { ...p, time_planned_hours: val }
-                                  : p
-                              )
+                                  : p,
+                              ),
                             );
                             if (taskErrors[i]?.time_planned_hours) {
                               setTaskErrors((prev) => ({
@@ -1256,7 +1275,7 @@ export default function NewReport() {
                             "w-20",
                             taskErrors[i]?.time_planned_hours
                               ? "border-red-500 focus-visible:ring-red-500"
-                              : ""
+                              : "",
                           )}
                         />
                         {taskErrors[i]?.time_planned_hours && (
@@ -1277,10 +1296,8 @@ export default function NewReport() {
                                 : Number(e.target.value);
                             setTasks((prev) =>
                               prev.map((p, idx) =>
-                                idx === i
-                                  ? { ...p, time_spent_hours: val }
-                                  : p
-                              )
+                                idx === i ? { ...p, time_spent_hours: val } : p,
+                              ),
                             );
                             if (taskErrors[i]?.time_spent_hours) {
                               setTaskErrors((prev) => ({
@@ -1296,7 +1313,7 @@ export default function NewReport() {
                             "w-20",
                             taskErrors[i]?.time_spent_hours
                               ? "border-red-500 focus-visible:ring-red-500"
-                              : ""
+                              : "",
                           )}
                         />
                         {taskErrors[i]?.time_spent_hours && (
@@ -1314,8 +1331,8 @@ export default function NewReport() {
                               prev.map((p, idx) =>
                                 idx === i
                                   ? { ...p, deliverable_output: e.target.value }
-                                  : p
-                              )
+                                  : p,
+                              ),
                             )
                           }
                           placeholder="e.g. PR #142"
@@ -1383,8 +1400,8 @@ export default function NewReport() {
                       onChange={(e) =>
                         setBlockers((prev) =>
                           prev.map((p, i) =>
-                            i === idx ? { ...p, text: e.target.value } : p
-                          )
+                            i === idx ? { ...p, text: e.target.value } : p,
+                          ),
                         )
                       }
                       placeholder="Describe the blocker..."
@@ -1442,8 +1459,8 @@ export default function NewReport() {
                       onChange={(e) =>
                         setAchievements((prev) =>
                           prev.map((p, i) =>
-                            i === idx ? { ...p, text: e.target.value } : p
-                          )
+                            i === idx ? { ...p, text: e.target.value } : p,
+                          ),
                         )
                       }
                       placeholder="Describe key achievement..."
@@ -1487,7 +1504,7 @@ export default function NewReport() {
                 <ChevronDown
                   className={cn(
                     "h-4 w-4 transition-transform duration-200",
-                    hoursOpen && "rotate-180"
+                    hoursOpen && "rotate-180",
                   )}
                 />
               </Button>

@@ -5,13 +5,25 @@ from supabase import Client
 
 from app.schemas.report_schema import ReportCreate, ReportUpdate
 
+STATUS_MAPPING = {
+    "draft": "Draft",
+    "submitted": "Submitted",
+    "needs correction": "Needs Correction",
+    "needs_correction": "Needs Correction",
+    "needscorrection": "Needs Correction",
+    "approved": "Approved",
+}
+
 
 def _clean_payload(data: dict) -> dict:
     return {key: value for key, value in data.items() if value is not None}
 
 
-def _normalize_status(value):
-    return (value or "draft").lower()
+def _normalize_status(value: str | None) -> str:
+    if not value:
+        return "Draft"
+    cleaned = value.strip().lower()
+    return STATUS_MAPPING.get(cleaned, value)
 
 
 def create_report(supabase: Client, request: ReportCreate) -> dict:

@@ -10,7 +10,6 @@ TaskType = Literal["Development", "Testing", "Meetings", "Documentation"]
 
 
 class ReportTaskBase(BaseModel):
-    id: int
     task_name: Optional[str] = None
     priority: Optional[TaskPriority] = None
     planned_percentage: Optional[float] = None
