@@ -386,7 +386,7 @@ export default function NewReport() {
 
           {/* Date & Project Row */}
           <div className="flex gap-5 items-start flex-wrap">
-            <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
+            <div className="flex flex-col gap-1 flex-1 w-full">
               <Label>
                 Week Starting <span className="text-red-500">*</span>
               </Label>
@@ -408,7 +408,7 @@ export default function NewReport() {
               )}
             </div>
 
-            <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
+            <div className="flex flex-col gap-1 flex-1 w-full">
               <Label>Week Ending</Label>
               <DatePicker
                 label="Week ending date"
@@ -417,7 +417,7 @@ export default function NewReport() {
               />
             </div>
 
-            <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
+            <div className="flex flex-col gap-1 flex-1 w-full">
               <Label>
                 Project/Category <span className="text-red-500">*</span>
               </Label>
