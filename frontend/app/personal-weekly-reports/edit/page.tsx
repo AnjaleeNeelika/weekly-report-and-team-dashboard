@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Suspense } from "react";
-import { ChevronDown, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Loader2, Plus, Trash2 } from "lucide-react";
 
 import { DatePicker } from "@/components/date-picker";
 import { toast } from "sonner";
@@ -43,7 +43,11 @@ import {
   TaskStatus,
   TaskType,
 } from "@/types/report";
-import { getReportById, resubmitReport, updateReport } from "@/data/report/data";
+import {
+  getReportById,
+  resubmitReport,
+  updateReport,
+} from "@/data/report/data";
 import { cn } from "cn";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -88,7 +92,9 @@ function EditReportContent() {
   const [reportStatus, setReportStatus] = useState<ReportStatus>();
   const [reportVersion, setReportVersion] = useState(1);
   const [reviewComment, setReviewComment] = useState("");
-  const [previousVersions, setPreviousVersions] = useState<NonNullable<import("@/types/report").Report["versions"]>>([]);
+  const [previousVersions, setPreviousVersions] = useState<
+    NonNullable<import("@/types/report").Report["versions"]>
+  >([]);
   const [weekStart, setWeekStart] = useState("");
   const [weekEnd, setWeekEnd] = useState("");
   const [project, setProject] = useState("");
@@ -107,7 +113,7 @@ function EditReportContent() {
   const [notes, setNotes] = useState("");
 
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(reportId));
   const [error, setError] = useState("");
   const [hoursOpen, setHoursOpen] = useState(false);
 
@@ -162,7 +168,11 @@ function EditReportContent() {
         setProject(report.project_tag ?? "");
         setReportStatus(report.status ?? "Draft");
         setReportVersion(report.version_number ?? 1);
-        setReviewComment(report.review_comment ?? report.review_comments?.at(-1)?.comment ?? "");
+        setReviewComment(
+          report.review_comment ??
+            report.review_comments?.at(-1)?.comment ??
+            "",
+        );
         setPreviousVersions(report.versions ?? []);
         setTasks(report.tasks?.length ? report.tasks : [emptyTask()]);
         setNextWeekPlan(report.tasks_planned_next_week ?? "");
@@ -468,11 +478,14 @@ function EditReportContent() {
       </div>
 
       {loading ? (
-        <div className="flex-1 w-full p-6 text-sm text-muted-foreground">
-          Loading report...
-        </div>
+        <Card className="flex-1 w-full p-6 text-sm text-muted-foreground text-center">
+          <div className="flex gap-2 justify-center items-center">
+            <Loader2 className="animate-spin" />
+            Loading report...
+          </div>
+        </Card>
       ) : (
-        <Card className="w-full max-w-225! p-0 mx-auto gap-0">
+        <Card className="w-full !max-w-[900px] p-0 mx-auto gap-0">
           <CardHeader className="bg-accent p-5">
             <CardTitle className="text-lg">Edit Weekly Report</CardTitle>
           </CardHeader>
@@ -493,724 +506,745 @@ function EditReportContent() {
 
             {previousVersions.length > 0 && (
               <details className="rounded-md border p-4">
-                <summary className="cursor-pointer text-sm font-semibold">Previous report versions</summary>
+                <summary className="cursor-pointer text-sm font-semibold">
+                  Previous report versions
+                </summary>
                 <div className="mt-3 space-y-2">
                   {previousVersions.map((version, index) => (
-                    <div key={version.id ?? version.version_number ?? index} className="rounded-md bg-muted p-3 text-sm">
-                      <p className="font-medium">Version {version.version_number ?? index + 1} · {version.status ?? "Unknown"}</p>
-                      {version.review_comment && <p className="mt-1 text-muted-foreground">{version.review_comment}</p>}
+                    <div
+                      key={version.id ?? version.version_number ?? index}
+                      className="rounded-md bg-muted p-3 text-sm"
+                    >
+                      <p className="font-medium">
+                        Version {version.version_number ?? index + 1} ·{" "}
+                        {version.status ?? "Unknown"}
+                      </p>
+                      {version.review_comment && (
+                        <p className="mt-1 text-muted-foreground">
+                          {version.review_comment}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
               </details>
             )}
 
-            <fieldset disabled={reportStatus !== "Draft" && reportStatus !== "Needs Correction"}>
-
-            {/* Date & Project Row */}
-            <div className="flex gap-5 items-start flex-wrap">
-              <div className="flex flex-col gap-1 flex-1 min-w-50">
-                <Label>
-                  Week Starting <span className="text-red-500">*</span>
-                </Label>
-                <DatePicker
-                  label="Pick the week start date"
-                  value={weekStart || null}
-                  onChange={(iso) => {
-                    setWeekStart(iso ?? "");
-                    setWeekEnd(computeWeekEnd(iso ?? ""));
-                    if (fieldErrors.weekStart) {
-                      setFieldErrors((f) => ({ ...f, weekStart: undefined }));
-                    }
-                  }}
-                />
-                {fieldErrors.weekStart && (
-                  <p className="text-xs text-red-600 font-medium">
-                    {fieldErrors.weekStart}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1 flex-1 min-w-50">
-                <Label>Week Ending</Label>
-                <DatePicker
-                  label="Week ending date"
-                  value={weekEnd || null}
-                  disabled={true}
-                />
-              </div>
-
-              <div className="flex flex-col gap-1 flex-1 min-w-50">
-                <Label>
-                  Project/Category <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  value={project}
-                  onChange={(e) => {
-                    setProject(e.target.value);
-                    if (fieldErrors.project && e.target.value.trim()) {
-                      setFieldErrors((f) => ({ ...f, project: undefined }));
-                    }
-                  }}
-                  placeholder="e.g. Client A"
-                  className={cn(
-                    "w-full",
-                    fieldErrors.project
-                      ? "border-red-500 focus-visible:ring-red-500"
-                      : "",
+            <fieldset
+              disabled={
+                reportStatus !== "Draft" && reportStatus !== "Needs Correction"
+              }
+            >
+              {/* Date & Project Row */}
+              <div className="flex gap-5 items-start flex-wrap">
+                <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
+                  <Label>
+                    Week Starting <span className="text-red-500">*</span>
+                  </Label>
+                  <DatePicker
+                    label="Pick the week start date"
+                    value={weekStart || null}
+                    onChange={(iso) => {
+                      setWeekStart(iso ?? "");
+                      setWeekEnd(computeWeekEnd(iso ?? ""));
+                      if (fieldErrors.weekStart) {
+                        setFieldErrors((f) => ({ ...f, weekStart: undefined }));
+                      }
+                    }}
+                  />
+                  {fieldErrors.weekStart && (
+                    <p className="text-xs text-red-600 font-medium">
+                      {fieldErrors.weekStart}
+                    </p>
                   )}
-                />
-                {fieldErrors.project && (
-                  <p className="text-xs text-red-600 font-medium">
-                    {fieldErrors.project}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Tasks Completed Table */}
-            <div className="flex flex-col gap-2">
-              <div className="flex gap-5 justify-between items-center mb-1">
-                <h2 className="text-base font-semibold">
-                  Tasks Completed <span className="text-red-500">*</span>
-                </h2>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex gap-1 items-center justify-center"
-                  onClick={addTask}
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Task
-                </Button>
-              </div>
-
-              <div
-                className={cn(
-                  "border rounded-md overflow-x-auto",
-                  fieldErrors.tasks ? "border-red-500 ring-1 ring-red-500" : "",
-                )}
-              >
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>
-                        Task <span className="text-red-500">*</span>
-                      </TableHead>
-                      <TableHead>Priority</TableHead>
-                      <TableHead>Planned %</TableHead>
-                      <TableHead>Actual %</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Hrs. Planned</TableHead>
-                      <TableHead>Hrs. Spent</TableHead>
-                      <TableHead>Output</TableHead>
-                      <TableHead className="w-10" />
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {tasks.map((t, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="align-top">
-                          <Input
-                            value={t.task_name ?? ""}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setTasks((prev) =>
-                                prev.map((p, idx) =>
-                                  idx === i ? { ...p, task_name: val } : p,
-                                ),
-                              );
-                              if (taskErrors[i]?.task_name && val.trim()) {
-                                setTaskErrors((prev) => ({
-                                  ...prev,
-                                  [i]: { ...prev[i], task_name: undefined },
-                                }));
-                              }
-                            }}
-                            placeholder="e.g. Build login page"
-                            className={cn(
-                              "w-52 max-w-full",
-                              taskErrors[i]?.task_name
-                                ? "border-red-500 focus-visible:ring-red-500"
-                                : "",
-                            )}
-                          />
-                          {taskErrors[i]?.task_name && (
-                            <p className="text-xs text-red-600 mt-1 font-medium">
-                              {taskErrors[i].task_name}
-                            </p>
-                          )}
-                        </TableCell>
-
-                        <TableCell className="align-top">
-                          <Select
-                            value={t.priority ?? "Medium"}
-                            onValueChange={(val) =>
-                              setTasks((prev) =>
-                                prev.map((p, idx) =>
-                                  idx === i
-                                    ? { ...p, priority: val as TaskPriority }
-                                    : p,
-                                ),
-                              )
-                            }
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue placeholder="Medium">
-                                {t.priority ?? "Medium"}
-                              </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent position="popper">
-                              <SelectGroup>
-                                {taskPriorities.map((priority) => (
-                                  <SelectItem key={priority} value={priority}>
-                                    {priority}
-                                  </SelectItem>
-                                ))}
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-
-                        <TableCell className="align-top">
-                          <Input
-                            type="number"
-                            value={t.planned_percentage ?? ""}
-                            onChange={(e) => {
-                              const val =
-                                e.target.value === ""
-                                  ? undefined
-                                  : Number(e.target.value);
-                              setTasks((prev) =>
-                                prev.map((p, idx) =>
-                                  idx === i
-                                    ? { ...p, planned_percentage: val }
-                                    : p,
-                                ),
-                              );
-                              if (taskErrors[i]?.planned_percentage) {
-                                setTaskErrors((prev) => ({
-                                  ...prev,
-                                  [i]: {
-                                    ...prev[i],
-                                    planned_percentage: undefined,
-                                  },
-                                }));
-                              }
-                            }}
-                            className={cn(
-                              "w-20",
-                              taskErrors[i]?.planned_percentage
-                                ? "border-red-500 focus-visible:ring-red-500"
-                                : "",
-                            )}
-                          />
-                          {taskErrors[i]?.planned_percentage && (
-                            <p className="text-xs text-red-600 mt-1 font-medium">
-                              {taskErrors[i].planned_percentage}
-                            </p>
-                          )}
-                        </TableCell>
-
-                        <TableCell className="align-top">
-                          <Input
-                            type="number"
-                            value={t.actual_percentage ?? ""}
-                            onChange={(e) => {
-                              const val =
-                                e.target.value === ""
-                                  ? undefined
-                                  : Number(e.target.value);
-                              setTasks((prev) =>
-                                prev.map((p, idx) =>
-                                  idx === i
-                                    ? { ...p, actual_percentage: val }
-                                    : p,
-                                ),
-                              );
-                              if (taskErrors[i]?.actual_percentage) {
-                                setTaskErrors((prev) => ({
-                                  ...prev,
-                                  [i]: {
-                                    ...prev[i],
-                                    actual_percentage: undefined,
-                                  },
-                                }));
-                              }
-                            }}
-                            className={cn(
-                              "w-20",
-                              taskErrors[i]?.actual_percentage
-                                ? "border-red-500 focus-visible:ring-red-500"
-                                : "",
-                            )}
-                          />
-                          {taskErrors[i]?.actual_percentage && (
-                            <p className="text-xs text-red-600 mt-1 font-medium">
-                              {taskErrors[i].actual_percentage}
-                            </p>
-                          )}
-                        </TableCell>
-
-                        <TableCell className="align-top">
-                          <Select
-                            value={t.status ?? "Not Started"}
-                            onValueChange={(val) =>
-                              setTasks((prev) =>
-                                prev.map((p, idx) =>
-                                  idx === i
-                                    ? { ...p, status: val as TaskStatus }
-                                    : p,
-                                ),
-                              )
-                            }
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue placeholder="Not Started">
-                                {t.status ?? "Not Started"}
-                              </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent position="popper">
-                              <SelectGroup>
-                                {taskStatuses.map((status) => (
-                                  <SelectItem key={status} value={status}>
-                                    {status}
-                                  </SelectItem>
-                                ))}
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-
-                        <TableCell className="align-top">
-                          <Input
-                            type="number"
-                            value={t.time_planned_hours ?? ""}
-                            onChange={(e) => {
-                              const val =
-                                e.target.value === ""
-                                  ? undefined
-                                  : Number(e.target.value);
-                              setTasks((prev) =>
-                                prev.map((p, idx) =>
-                                  idx === i
-                                    ? { ...p, time_planned_hours: val }
-                                    : p,
-                                ),
-                              );
-                              if (taskErrors[i]?.time_planned_hours) {
-                                setTaskErrors((prev) => ({
-                                  ...prev,
-                                  [i]: {
-                                    ...prev[i],
-                                    time_planned_hours: undefined,
-                                  },
-                                }));
-                              }
-                            }}
-                            className={cn(
-                              "w-20",
-                              taskErrors[i]?.time_planned_hours
-                                ? "border-red-500 focus-visible:ring-red-500"
-                                : "",
-                            )}
-                          />
-                          {taskErrors[i]?.time_planned_hours && (
-                            <p className="text-xs text-red-600 mt-1 font-medium">
-                              {taskErrors[i].time_planned_hours}
-                            </p>
-                          )}
-                        </TableCell>
-
-                        <TableCell className="align-top">
-                          <Input
-                            type="number"
-                            value={t.time_spent_hours ?? ""}
-                            onChange={(e) => {
-                              const val =
-                                e.target.value === ""
-                                  ? undefined
-                                  : Number(e.target.value);
-                              setTasks((prev) =>
-                                prev.map((p, idx) =>
-                                  idx === i
-                                    ? { ...p, time_spent_hours: val }
-                                    : p,
-                                ),
-                              );
-                              if (taskErrors[i]?.time_spent_hours) {
-                                setTaskErrors((prev) => ({
-                                  ...prev,
-                                  [i]: {
-                                    ...prev[i],
-                                    time_spent_hours: undefined,
-                                  },
-                                }));
-                              }
-                            }}
-                            className={cn(
-                              "w-20",
-                              taskErrors[i]?.time_spent_hours
-                                ? "border-red-500 focus-visible:ring-red-500"
-                                : "",
-                            )}
-                          />
-                          {taskErrors[i]?.time_spent_hours && (
-                            <p className="text-xs text-red-600 mt-1 font-medium">
-                              {taskErrors[i].time_spent_hours}
-                            </p>
-                          )}
-                        </TableCell>
-
-                        <TableCell className="align-top">
-                          <Input
-                            value={t.deliverable_output ?? ""}
-                            onChange={(e) =>
-                              setTasks((prev) =>
-                                prev.map((p, idx) =>
-                                  idx === i
-                                    ? {
-                                        ...p,
-                                        deliverable_output: e.target.value,
-                                      }
-                                    : p,
-                                ),
-                              )
-                            }
-                            placeholder="e.g. PR #142"
-                            className="w-48"
-                          />
-                        </TableCell>
-
-                        <TableCell className="align-top">
-                          {tasks.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => removeTask(i)}
-                              className="text-sm text-muted-foreground hover:text-red-600 p-2"
-                              aria-label="Remove task"
-                            >
-                              ✕
-                            </button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              {fieldErrors.tasks && (
-                <p className="text-xs text-red-600 font-medium">
-                  {fieldErrors.tasks}
-                </p>
-              )}
-            </div>
-
-            {/* Next Week Plan */}
-            <div className="space-y-3">
-              <Label>Tasks Planned for Next Week</Label>
-              <Textarea
-                value={nextWeekPlan}
-                onChange={(e) => setNextWeekPlan(e.target.value)}
-                placeholder="What are you planning to work on next week?"
-              />
-            </div>
-
-            {/* Blockers Section */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold">Blockers / Challenges</h2>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addBlocker}
-                >
-                  Add blocker
-                </Button>
-              </div>
-              {blockers.length === 0 ? (
-                <p className="rounded-md border border-dashed py-4 text-center text-sm text-slate-500">
-                  No blockers reported. Nice week!
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {blockers.map((b, idx) => (
-                    <div key={idx} className="flex items-center gap-3">
-                      <Input
-                        value={b.text}
-                        onChange={(e) =>
-                          setBlockers((prev) =>
-                            prev.map((p, i) =>
-                              i === idx ? { ...p, text: e.target.value } : p,
-                            ),
-                          )
-                        }
-                        placeholder="Describe the blocker..."
-                        className="flex-1"
-                      />
-                      <div className="flex items-center gap-2">
-                        <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={b.is_key}
-                            onChange={() => setKeyBlocker(idx)}
-                            className="rounded border-gray-300 text-primary focus:ring-primary"
-                          />
-                          Key Blocker
-                        </label>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-red-600"
-                          onClick={() => removeBlocker(idx)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
                 </div>
-              )}
-            </div>
 
-            {/* Achievements Section */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold">Key Achievements</h2>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addAchievement}
-                >
-                  Add achievement
-                </Button>
-              </div>
-              {achievements.length === 0 ? (
-                <p className="rounded-md border border-dashed py-4 text-center text-sm text-slate-500">
-                  No achievements added yet.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {achievements.map((a, idx) => (
-                    <div key={idx} className="flex items-center gap-3">
-                      <Input
-                        value={a.text}
-                        onChange={(e) =>
-                          setAchievements((prev) =>
-                            prev.map((p, i) =>
-                              i === idx ? { ...p, text: e.target.value } : p,
-                            ),
-                          )
-                        }
-                        placeholder="Describe key achievement..."
-                        className="flex-1"
-                      />
-                      <div className="flex items-center gap-2">
-                        <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={a.is_key}
-                            onChange={() => setKeyAchievement(idx)}
-                            className="rounded border-gray-300 text-primary focus:ring-primary"
-                          />
-                          Key Achievement
-                        </label>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-red-600"
-                          onClick={() => removeAchievement(idx)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex flex-col gap-1 flex-1 min-w-50">
+                  <Label>Week Ending</Label>
+                  <DatePicker
+                    label="Week ending date"
+                    value={weekEnd || null}
+                    disabled={true}
+                  />
                 </div>
-              )}
-            </div>
 
-            {/* Hours Breakdown Collapsible Section */}
-            <Collapsible open={hoursOpen} onOpenChange={setHoursOpen}>
-              <CollapsibleTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="flex items-center justify-between w-full p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md"
-                >
-                  <span className="text-sm font-semibold">Hours Breakdown</span>
-                  <ChevronDown
+                <div className="flex flex-col gap-1 flex-1 min-w-50">
+                  <Label>
+                    Project/Category <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    value={project}
+                    onChange={(e) => {
+                      setProject(e.target.value);
+                      if (fieldErrors.project && e.target.value.trim()) {
+                        setFieldErrors((f) => ({ ...f, project: undefined }));
+                      }
+                    }}
+                    placeholder="e.g. Client A"
                     className={cn(
-                      "h-4 w-4 transition-transform duration-200",
-                      hoursOpen && "rotate-180",
+                      "w-full",
+                      fieldErrors.project
+                        ? "border-red-500 focus-visible:ring-red-500"
+                        : "",
                     )}
                   />
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pt-3 space-y-3">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Development</Label>
-                    <Input
-                      type="number"
-                      value={hours.development}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setHours((prev) => ({ ...prev, development: val }));
-                        if (hoursErrors.development) {
-                          setHoursErrors((prev) => ({
-                            ...prev,
-                            development: undefined,
-                          }));
-                        }
-                      }}
-                      placeholder="0"
-                      className={
-                        hoursErrors.development
-                          ? "border-red-500 focus-visible:ring-red-500"
-                          : ""
-                      }
-                    />
-                    {hoursErrors.development && (
-                      <p className="text-xs text-red-600 font-medium">
-                        {hoursErrors.development}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-xs">Testing</Label>
-                    <Input
-                      type="number"
-                      value={hours.testing}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setHours((prev) => ({ ...prev, testing: val }));
-                        if (hoursErrors.testing) {
-                          setHoursErrors((prev) => ({
-                            ...prev,
-                            testing: undefined,
-                          }));
-                        }
-                      }}
-                      placeholder="0"
-                      className={
-                        hoursErrors.testing
-                          ? "border-red-500 focus-visible:ring-red-500"
-                          : ""
-                      }
-                    />
-                    {hoursErrors.testing && (
-                      <p className="text-xs text-red-600 font-medium">
-                        {hoursErrors.testing}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-xs">Meetings</Label>
-                    <Input
-                      type="number"
-                      value={hours.meetings}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setHours((prev) => ({ ...prev, meetings: val }));
-                        if (hoursErrors.meetings) {
-                          setHoursErrors((prev) => ({
-                            ...prev,
-                            meetings: undefined,
-                          }));
-                        }
-                      }}
-                      placeholder="0"
-                      className={
-                        hoursErrors.meetings
-                          ? "border-red-500 focus-visible:ring-red-500"
-                          : ""
-                      }
-                    />
-                    {hoursErrors.meetings && (
-                      <p className="text-xs text-red-600 font-medium">
-                        {hoursErrors.meetings}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-xs">Documentation</Label>
-                    <Input
-                      type="number"
-                      value={hours.documentation}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setHours((prev) => ({ ...prev, documentation: val }));
-                        if (hoursErrors.documentation) {
-                          setHoursErrors((prev) => ({
-                            ...prev,
-                            documentation: undefined,
-                          }));
-                        }
-                      }}
-                      placeholder="0"
-                      className={
-                        hoursErrors.documentation
-                          ? "border-red-500 focus-visible:ring-red-500"
-                          : ""
-                      }
-                    />
-                    {hoursErrors.documentation && (
-                      <p className="text-xs text-red-600 font-medium">
-                        {hoursErrors.documentation}
-                      </p>
-                    )}
-                  </div>
+                  {fieldErrors.project && (
+                    <p className="text-xs text-red-600 font-medium">
+                      {fieldErrors.project}
+                    </p>
+                  )}
                 </div>
-              </CollapsibleContent>
-            </Collapsible>
+              </div>
 
-            {/* Notes and Links */}
-            <div className="space-y-3">
-              <Label>Notes or Links</Label>
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Additional comments, PR links, or documents..."
-              />
-            </div>
+              {/* Tasks Completed Table */}
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-5 justify-between items-center mb-1">
+                  <h2 className="text-base font-semibold">
+                    Tasks Completed <span className="text-red-500">*</span>
+                  </h2>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex gap-1 items-center justify-center"
+                    onClick={addTask}
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Task
+                  </Button>
+                </div>
 
-            {/* Action Buttons */}
-            {reportStatus === "Draft" &&
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={saving}
-                onClick={() => handleSave("Draft")}
-              >
-                Save as Draft
-              </Button>
-              <Button
-                type="button"
-                disabled={saving}
-                onClick={() => handleSave("Submitted")}
-              >
-                {saving ? "Saving..." : "Submit Report"}
-              </Button>
-            </div>
-            }
-            {reportStatus === "Needs Correction" &&
+                <div
+                  className={cn(
+                    "border rounded-md overflow-x-auto",
+                    fieldErrors.tasks
+                      ? "border-red-500 ring-1 ring-red-500"
+                      : "",
+                  )}
+                >
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>
+                          Task <span className="text-red-500">*</span>
+                        </TableHead>
+                        <TableHead>Priority</TableHead>
+                        <TableHead>Planned %</TableHead>
+                        <TableHead>Actual %</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Hrs. Planned</TableHead>
+                        <TableHead>Hrs. Spent</TableHead>
+                        <TableHead>Output</TableHead>
+                        <TableHead className="w-10" />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {tasks.map((t, i) => (
+                        <TableRow key={i}>
+                          <TableCell className="align-top">
+                            <Input
+                              value={t.task_name ?? ""}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setTasks((prev) =>
+                                  prev.map((p, idx) =>
+                                    idx === i ? { ...p, task_name: val } : p,
+                                  ),
+                                );
+                                if (taskErrors[i]?.task_name && val.trim()) {
+                                  setTaskErrors((prev) => ({
+                                    ...prev,
+                                    [i]: { ...prev[i], task_name: undefined },
+                                  }));
+                                }
+                              }}
+                              placeholder="e.g. Build login page"
+                              className={cn(
+                                "w-52 max-w-full",
+                                taskErrors[i]?.task_name
+                                  ? "border-red-500 focus-visible:ring-red-500"
+                                  : "",
+                              )}
+                            />
+                            {taskErrors[i]?.task_name && (
+                              <p className="text-xs text-red-600 mt-1 font-medium">
+                                {taskErrors[i].task_name}
+                              </p>
+                            )}
+                          </TableCell>
+
+                          <TableCell className="align-top">
+                            <Select
+                              value={t.priority ?? "Medium"}
+                              onValueChange={(val) =>
+                                setTasks((prev) =>
+                                  prev.map((p, idx) =>
+                                    idx === i
+                                      ? { ...p, priority: val as TaskPriority }
+                                      : p,
+                                  ),
+                                )
+                              }
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue placeholder="Medium">
+                                  {t.priority ?? "Medium"}
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent position="popper">
+                                <SelectGroup>
+                                  {taskPriorities.map((priority) => (
+                                    <SelectItem key={priority} value={priority}>
+                                      {priority}
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+
+                          <TableCell className="align-top">
+                            <Input
+                              type="number"
+                              value={t.planned_percentage ?? ""}
+                              onChange={(e) => {
+                                const val =
+                                  e.target.value === ""
+                                    ? undefined
+                                    : Number(e.target.value);
+                                setTasks((prev) =>
+                                  prev.map((p, idx) =>
+                                    idx === i
+                                      ? { ...p, planned_percentage: val }
+                                      : p,
+                                  ),
+                                );
+                                if (taskErrors[i]?.planned_percentage) {
+                                  setTaskErrors((prev) => ({
+                                    ...prev,
+                                    [i]: {
+                                      ...prev[i],
+                                      planned_percentage: undefined,
+                                    },
+                                  }));
+                                }
+                              }}
+                              className={cn(
+                                "w-20",
+                                taskErrors[i]?.planned_percentage
+                                  ? "border-red-500 focus-visible:ring-red-500"
+                                  : "",
+                              )}
+                            />
+                            {taskErrors[i]?.planned_percentage && (
+                              <p className="text-xs text-red-600 mt-1 font-medium">
+                                {taskErrors[i].planned_percentage}
+                              </p>
+                            )}
+                          </TableCell>
+
+                          <TableCell className="align-top">
+                            <Input
+                              type="number"
+                              value={t.actual_percentage ?? ""}
+                              onChange={(e) => {
+                                const val =
+                                  e.target.value === ""
+                                    ? undefined
+                                    : Number(e.target.value);
+                                setTasks((prev) =>
+                                  prev.map((p, idx) =>
+                                    idx === i
+                                      ? { ...p, actual_percentage: val }
+                                      : p,
+                                  ),
+                                );
+                                if (taskErrors[i]?.actual_percentage) {
+                                  setTaskErrors((prev) => ({
+                                    ...prev,
+                                    [i]: {
+                                      ...prev[i],
+                                      actual_percentage: undefined,
+                                    },
+                                  }));
+                                }
+                              }}
+                              className={cn(
+                                "w-20",
+                                taskErrors[i]?.actual_percentage
+                                  ? "border-red-500 focus-visible:ring-red-500"
+                                  : "",
+                              )}
+                            />
+                            {taskErrors[i]?.actual_percentage && (
+                              <p className="text-xs text-red-600 mt-1 font-medium">
+                                {taskErrors[i].actual_percentage}
+                              </p>
+                            )}
+                          </TableCell>
+
+                          <TableCell className="align-top">
+                            <Select
+                              value={t.status ?? "Not Started"}
+                              onValueChange={(val) =>
+                                setTasks((prev) =>
+                                  prev.map((p, idx) =>
+                                    idx === i
+                                      ? { ...p, status: val as TaskStatus }
+                                      : p,
+                                  ),
+                                )
+                              }
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue placeholder="Not Started">
+                                  {t.status ?? "Not Started"}
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent position="popper">
+                                <SelectGroup>
+                                  {taskStatuses.map((status) => (
+                                    <SelectItem key={status} value={status}>
+                                      {status}
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+
+                          <TableCell className="align-top">
+                            <Input
+                              type="number"
+                              value={t.time_planned_hours ?? ""}
+                              onChange={(e) => {
+                                const val =
+                                  e.target.value === ""
+                                    ? undefined
+                                    : Number(e.target.value);
+                                setTasks((prev) =>
+                                  prev.map((p, idx) =>
+                                    idx === i
+                                      ? { ...p, time_planned_hours: val }
+                                      : p,
+                                  ),
+                                );
+                                if (taskErrors[i]?.time_planned_hours) {
+                                  setTaskErrors((prev) => ({
+                                    ...prev,
+                                    [i]: {
+                                      ...prev[i],
+                                      time_planned_hours: undefined,
+                                    },
+                                  }));
+                                }
+                              }}
+                              className={cn(
+                                "w-20",
+                                taskErrors[i]?.time_planned_hours
+                                  ? "border-red-500 focus-visible:ring-red-500"
+                                  : "",
+                              )}
+                            />
+                            {taskErrors[i]?.time_planned_hours && (
+                              <p className="text-xs text-red-600 mt-1 font-medium">
+                                {taskErrors[i].time_planned_hours}
+                              </p>
+                            )}
+                          </TableCell>
+
+                          <TableCell className="align-top">
+                            <Input
+                              type="number"
+                              value={t.time_spent_hours ?? ""}
+                              onChange={(e) => {
+                                const val =
+                                  e.target.value === ""
+                                    ? undefined
+                                    : Number(e.target.value);
+                                setTasks((prev) =>
+                                  prev.map((p, idx) =>
+                                    idx === i
+                                      ? { ...p, time_spent_hours: val }
+                                      : p,
+                                  ),
+                                );
+                                if (taskErrors[i]?.time_spent_hours) {
+                                  setTaskErrors((prev) => ({
+                                    ...prev,
+                                    [i]: {
+                                      ...prev[i],
+                                      time_spent_hours: undefined,
+                                    },
+                                  }));
+                                }
+                              }}
+                              className={cn(
+                                "w-20",
+                                taskErrors[i]?.time_spent_hours
+                                  ? "border-red-500 focus-visible:ring-red-500"
+                                  : "",
+                              )}
+                            />
+                            {taskErrors[i]?.time_spent_hours && (
+                              <p className="text-xs text-red-600 mt-1 font-medium">
+                                {taskErrors[i].time_spent_hours}
+                              </p>
+                            )}
+                          </TableCell>
+
+                          <TableCell className="align-top">
+                            <Input
+                              value={t.deliverable_output ?? ""}
+                              onChange={(e) =>
+                                setTasks((prev) =>
+                                  prev.map((p, idx) =>
+                                    idx === i
+                                      ? {
+                                          ...p,
+                                          deliverable_output: e.target.value,
+                                        }
+                                      : p,
+                                  ),
+                                )
+                              }
+                              placeholder="e.g. PR #142"
+                              className="w-48"
+                            />
+                          </TableCell>
+
+                          <TableCell className="align-top">
+                            {tasks.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => removeTask(i)}
+                                className="text-sm text-muted-foreground hover:text-red-600 p-2"
+                                aria-label="Remove task"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                {fieldErrors.tasks && (
+                  <p className="text-xs text-red-600 font-medium">
+                    {fieldErrors.tasks}
+                  </p>
+                )}
+              </div>
+
+              {/* Next Week Plan */}
+              <div className="space-y-3">
+                <Label>Tasks Planned for Next Week</Label>
+                <Textarea
+                  value={nextWeekPlan}
+                  onChange={(e) => setNextWeekPlan(e.target.value)}
+                  placeholder="What are you planning to work on next week?"
+                />
+              </div>
+
+              {/* Blockers Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-semibold">
+                    Blockers / Challenges
+                  </h2>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addBlocker}
+                  >
+                    Add blocker
+                  </Button>
+                </div>
+                {blockers.length === 0 ? (
+                  <p className="rounded-md border border-dashed py-4 text-center text-sm text-slate-500">
+                    No blockers reported. Nice week!
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {blockers.map((b, idx) => (
+                      <div key={idx} className="flex items-center gap-3">
+                        <Input
+                          value={b.text}
+                          onChange={(e) =>
+                            setBlockers((prev) =>
+                              prev.map((p, i) =>
+                                i === idx ? { ...p, text: e.target.value } : p,
+                              ),
+                            )
+                          }
+                          placeholder="Describe the blocker..."
+                          className="flex-1"
+                        />
+                        <div className="flex items-center gap-2">
+                          <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={b.is_key}
+                              onChange={() => setKeyBlocker(idx)}
+                              className="rounded border-gray-300 text-primary focus:ring-primary"
+                            />
+                            Key Blocker
+                          </label>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-red-600"
+                            onClick={() => removeBlocker(idx)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Achievements Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-semibold">Key Achievements</h2>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addAchievement}
+                  >
+                    Add achievement
+                  </Button>
+                </div>
+                {achievements.length === 0 ? (
+                  <p className="rounded-md border border-dashed py-4 text-center text-sm text-slate-500">
+                    No achievements added yet.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {achievements.map((a, idx) => (
+                      <div key={idx} className="flex items-center gap-3">
+                        <Input
+                          value={a.text}
+                          onChange={(e) =>
+                            setAchievements((prev) =>
+                              prev.map((p, i) =>
+                                i === idx ? { ...p, text: e.target.value } : p,
+                              ),
+                            )
+                          }
+                          placeholder="Describe key achievement..."
+                          className="flex-1"
+                        />
+                        <div className="flex items-center gap-2">
+                          <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={a.is_key}
+                              onChange={() => setKeyAchievement(idx)}
+                              className="rounded border-gray-300 text-primary focus:ring-primary"
+                            />
+                            Key Achievement
+                          </label>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-red-600"
+                            onClick={() => removeAchievement(idx)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Hours Breakdown Collapsible Section */}
+              <Collapsible open={hoursOpen} onOpenChange={setHoursOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="flex items-center justify-between w-full p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md"
+                  >
+                    <span className="text-sm font-semibold">
+                      Hours Breakdown
+                    </span>
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 transition-transform duration-200",
+                        hoursOpen && "rotate-180",
+                      )}
+                    />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3 space-y-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Development</Label>
+                      <Input
+                        type="number"
+                        value={hours.development}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setHours((prev) => ({ ...prev, development: val }));
+                          if (hoursErrors.development) {
+                            setHoursErrors((prev) => ({
+                              ...prev,
+                              development: undefined,
+                            }));
+                          }
+                        }}
+                        placeholder="0"
+                        className={
+                          hoursErrors.development
+                            ? "border-red-500 focus-visible:ring-red-500"
+                            : ""
+                        }
+                      />
+                      {hoursErrors.development && (
+                        <p className="text-xs text-red-600 font-medium">
+                          {hoursErrors.development}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-xs">Testing</Label>
+                      <Input
+                        type="number"
+                        value={hours.testing}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setHours((prev) => ({ ...prev, testing: val }));
+                          if (hoursErrors.testing) {
+                            setHoursErrors((prev) => ({
+                              ...prev,
+                              testing: undefined,
+                            }));
+                          }
+                        }}
+                        placeholder="0"
+                        className={
+                          hoursErrors.testing
+                            ? "border-red-500 focus-visible:ring-red-500"
+                            : ""
+                        }
+                      />
+                      {hoursErrors.testing && (
+                        <p className="text-xs text-red-600 font-medium">
+                          {hoursErrors.testing}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-xs">Meetings</Label>
+                      <Input
+                        type="number"
+                        value={hours.meetings}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setHours((prev) => ({ ...prev, meetings: val }));
+                          if (hoursErrors.meetings) {
+                            setHoursErrors((prev) => ({
+                              ...prev,
+                              meetings: undefined,
+                            }));
+                          }
+                        }}
+                        placeholder="0"
+                        className={
+                          hoursErrors.meetings
+                            ? "border-red-500 focus-visible:ring-red-500"
+                            : ""
+                        }
+                      />
+                      {hoursErrors.meetings && (
+                        <p className="text-xs text-red-600 font-medium">
+                          {hoursErrors.meetings}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-xs">Documentation</Label>
+                      <Input
+                        type="number"
+                        value={hours.documentation}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setHours((prev) => ({ ...prev, documentation: val }));
+                          if (hoursErrors.documentation) {
+                            setHoursErrors((prev) => ({
+                              ...prev,
+                              documentation: undefined,
+                            }));
+                          }
+                        }}
+                        placeholder="0"
+                        className={
+                          hoursErrors.documentation
+                            ? "border-red-500 focus-visible:ring-red-500"
+                            : ""
+                        }
+                      />
+                      {hoursErrors.documentation && (
+                        <p className="text-xs text-red-600 font-medium">
+                          {hoursErrors.documentation}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+
+              {/* Notes and Links */}
+              <div className="space-y-3">
+                <Label>Notes or Links</Label>
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Additional comments, PR links, or documents..."
+                />
+              </div>
+
+              {/* Action Buttons */}
+              {reportStatus === "Draft" && (
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={saving}
+                    onClick={() => handleSave("Draft")}
+                  >
+                    Save as Draft
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => handleSave("Submitted")}
+                  >
+                    {saving ? "Saving..." : "Submit Report"}
+                  </Button>
+                </div>
+              )}
+              {reportStatus === "Needs Correction" && (
                 <Button
-                type="button"
-                disabled={saving}
-                onClick={() => handleSave("Submitted")}
-              >
-                {saving ? "Saving..." : "Re-submit Report"}
-              </Button>
-            }
+                  type="button"
+                  disabled={saving}
+                  onClick={() => handleSave("Submitted")}
+                >
+                  {saving ? "Saving..." : "Re-submit Report"}
+                </Button>
+              )}
             </fieldset>
           </div>
         </Card>
