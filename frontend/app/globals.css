@@ -49,6 +49,8 @@
 }
 
 :root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.141 0.005 285.823);
   --popover: oklch(1 0 0);
@@ -79,8 +81,6 @@
   --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
   --sidebar-border: oklch(0.92 0.004 286.32);
   --sidebar-ring: oklch(0.705 0.015 286.067);
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
 }
 
 .dark {
@@ -127,19 +127,4 @@
   html {
     @apply font-sans;
   }
-}
-
-/* Smooth theme transition — only active for ~300ms around each toggle click */
-.theme-transitioning,
-.theme-transitioning *,
-.theme-transitioning *::before,
-.theme-transitioning *::after {
-  transition:
-    color 300ms ease,
-    background-color 300ms ease,
-    border-color 300ms ease,
-    box-shadow 300ms ease,
-    fill 300ms ease,
-    stroke 300ms ease !important;
-  transition-delay: 0ms !important;
 }
