@@ -14,6 +14,7 @@ import {
   UsersRound,
   type LucideIcon,
   ClipboardCheck,
+  Users,
 } from "lucide-react";
 import {
   Sidebar,
@@ -86,7 +87,16 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: "SETTINGS",
     items: [
-      { icon: UsersRound, label: "Admin Panel", key: "admin-panel", href: "/admin-panel", expandable: true },
+      { 
+        icon: UsersRound, 
+        label: "Admin Panel", 
+        key: "admin-panel", 
+        href: "/admin-panel", 
+        expandable: true,
+        subItems: [
+          { icon: Users, label: "User Management", key: "user-management", href: "/admin-panel/user-management"}
+        ],
+      },
       { icon: Settings, label: "Settings", key: "settings", href: "/settings" },
     ],
   },
@@ -121,7 +131,7 @@ export default function AppSidebar() {
                 {section.items.map((item) => (
                   <SidebarMenuItem key={item.key}>
                     <SidebarMenuButton
-                      asChild
+                      asChild={!item.subItems?.length}
                       isActive={isExactActive(item.href)}
                       className={
                         item.subItems?.some((subItem) => isExactActive(subItem.href))
@@ -130,17 +140,31 @@ export default function AppSidebar() {
                       }
                       tooltip={item.label}
                     >
-                      <Link href={item.href}>
-                        <item.icon />
-                        <span>{item.label}</span>
-                        {item.expandable && (
-                          isActive(item.href) ? (
-                            <ChevronDown className="ml-auto text-primary" />
-                          ) : (
-                            <ChevronRight className="ml-auto" />
-                          )
-                        )}
-                      </Link>
+                      {item.subItems?.length ? (
+                        <>
+                          <item.icon />
+                          <span>{item.label}</span>
+                          {item.expandable && (
+                            isActive(item.href) ? (
+                              <ChevronDown className="ml-auto text-primary" />
+                            ) : (
+                              <ChevronRight className="ml-auto" />
+                            )
+                          )}
+                        </>
+                      ) : (
+                        <Link href={item.href}>
+                          <item.icon />
+                          <span>{item.label}</span>
+                          {item.expandable && (
+                            isActive(item.href) ? (
+                              <ChevronDown className="ml-auto text-primary" />
+                            ) : (
+                              <ChevronRight className="ml-auto" />
+                            )
+                          )}
+                        </Link>
+                      )}
                     </SidebarMenuButton>
                     {item.subItems && (
                       <SidebarMenuSub>
@@ -151,7 +175,7 @@ export default function AppSidebar() {
                               isActive={isExactActive(subItem.href)}
                               className={
                                 isExactActive(subItem.href)
-                                  ? "!bg-sidebar-primary !text-sidebar-primary-foreground hover:!bg-sidebar-primary/90 hover:!text-sidebar-primary-foreground [&>svg]:!text-sidebar-primary-foreground"
+                                  ? "bg-sidebar-primary! text-sidebar-primary-foreground! hover:bg-sidebar-primary/90! hover:text-sidebar-primary-foreground! [&>svg]:text-sidebar-primary-foreground!"
                                   : undefined
                               }
                             >
