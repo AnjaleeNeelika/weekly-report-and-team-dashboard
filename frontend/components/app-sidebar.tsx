@@ -60,7 +60,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: "MAIN MENU",
     items: [
-      { icon: LayoutDashboard, label: "Dashboard", key: "dashboard", href: "/overview" },
+      { icon: LayoutDashboard, label: "Dashboard", key: "dashboard", href: "/dashboard" },
       {
         icon: FileText,
         label: "Personal Weekly Reports",
@@ -112,17 +112,17 @@ export default function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b px-3 py-3">
-        <div className="flex items-center gap-2">
+      <SidebarHeader className="border-b px-3 h-14 flex items-center justify-center w-full bg-background">
+        <div className="flex items-center justify-between w-full gap-2">
           <BarChart3 className="size-5 shrink-0 text-primary" />
-          <span className="text-lg font-semibold tracking-tight text-primary group-data-[collapsible=icon]:hidden">
+          <span className="text-lg font-bold tracking-tight text-primary group-data-[collapsible=icon]:hidden">
             TeamSync
           </span>
           <SidebarTrigger className="ml-auto text-sidebar-foreground" />
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="bg-background">
         {NAV_SECTIONS.map((section) => (
           <SidebarGroup key={section.label}>
             <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
@@ -196,7 +196,7 @@ export default function AppSidebar() {
         ))}
       </SidebarContent>
 
-      <SidebarFooter className="border-t p-3">
+      <SidebarFooter className="border-t p-3 bg-background">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton className="h-auto py-2" tooltip="Anjalee Neelika">

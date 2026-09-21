@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 export default function Navbar() {
     const { resolvedTheme, setTheme } = useTheme();
-    const isDark = resolvedTheme === "dark";
+    const isDark = resolvedTheme === "light";
 
     return (
         <nav className="ml-auto flex items-center">

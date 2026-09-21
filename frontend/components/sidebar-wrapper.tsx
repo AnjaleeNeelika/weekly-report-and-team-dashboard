@@ -43,11 +43,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-15 shrink-0 items-center gap-2 border-b border-border px-4">
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4">
           <span className="text-sm text-muted-foreground"></span>
           <Navbar />
         </header>
-        <main className="flex flex-1 flex-col w-full h-screen bg-slate-100 dark:bg-background">{children}</main>
+        <main className="flex flex-1 flex-col w-full h-screen bg-zinc-50 dark:bg-background">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );
